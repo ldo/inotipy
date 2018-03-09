@@ -336,11 +336,12 @@ class Context :
         # called by asyncio when there is a notification event to be read.
         fixed_size = ct.sizeof(inotify_event)
         buf = os.read(self._fd, fixed_size + NAME_MAX + 1)
-        if len(buf) != 0 :
+        while len(buf) != 0 :
             assert len(buf) >= fixed_size, "truncated inotify message: expected %d bytes, got %d" % (fixed_size, len(buf))
             wd, mask, cookie, namelen = struct.unpack("@iIII", buf[:fixed_size])
             assert len(buf) >= fixed_size + namelen, "truncated rest of inotify message: expected %d bytes, got %d" % (fixed_size + namelen, len(buf))
             pathname = buf[fixed_size : fixed_size + namelen]
+            buf = buf[fixed_size + namelen:]
             end = pathname.find(0)
             if end >= 0 :
                 pathname = pathname[:end]
@@ -363,7 +364,7 @@ class Context :
                 # wake up task at head of queue
                 self._awaiting[0].set_result(True)
             #end if
-        #end if
+        #end while
     #end _callback
 
     async def get(self, timeout = None) :
