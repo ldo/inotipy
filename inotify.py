@@ -8,6 +8,7 @@ working with asyncio.
 #-
 
 import os
+import enum
 import ctypes as ct
 import struct
 from weakref import \
@@ -98,6 +99,42 @@ class IN :
 
 #end IN
 
+@enum.unique
+class EVENT_BIT(enum.IntEnum) :
+    "names for single bits in mask; value is bit number."
+
+    ACCESS = 0
+    MODIFY = 1
+    ATTRIB = 2
+    CLOSE_WRITE = 3
+    CLOSE_NOWRITE = 4
+    OPEN = 5
+    MOVED_FROM = 6
+    MOVED_TO = 7
+    CREATE = 8
+    DELETE = 9
+    DELETE_SELF = 10
+    MOVE_SELF = 11
+    UNMOUNT = 13
+    Q_OVERFLOW = 14
+    IGNORED = 15
+
+    ONLYDIR = 24
+    DONT_FOLLOW = 25
+    EXCL_UNLINK = 26
+    MASK_ADD = 29
+    ISDIR = 30
+    ONESHOT = 31
+
+    @property
+    def mask(self) :
+        "convert bit number to mask."
+        return \
+            1 << self.value
+    #end mask
+
+#end EVENT_BIT
+
 #+
 # Library prototypes
 #-
@@ -176,6 +213,22 @@ class Event :
         self.pathname = pathname
     #end __init
 
+    def __repr__(self) :
+        mask_bits = []
+        for i in range(32) :
+            if 1 << i & self.mask != 0 :
+                try :
+                    name = EVENT_BIT(i)
+                except ValueError :
+                    name = "?%d" % i
+                #end try
+                mask_bits.append(name)
+            #end if
+        #end for
+        return \
+            "Event(%d, %s, %d, %s)" % (self.watch._wd, mask_bits, self.cookie, self.pathname)
+    #end __repr__
+
 #end Event
 
 class Context :
@@ -235,6 +288,7 @@ class Context :
         result = celf(fd)
         if result._loop == None :
             result._loop = weak_ref(loop)
+            result._add_remove_watch(True)
         elif result._loop() != loop :
             raise RuntimeError("watcher was not created on current event loop")
         #end if
@@ -287,10 +341,10 @@ class Context :
         fixed_size = ct.sizeof(inotify_event)
         buf = os.read(self._fd, fixed_size + NAME_MAX)
         if len(buf) != 0 :
-            assert len(buf) >= fixed_size, "truncated inotify message"
-            wd, mask, cookie, len = struct.unpack("@iIII")
-            assert len(buf) == fixed_size + len, "garbled inotify message?"
-            pathname = buf[fixed_size : fixed_size + len].decode()
+            assert len(buf) >= fixed_size, "truncated inotify message: expected %d bytes, got %d" % (fixed_size, len(buf))
+            wd, mask, cookie, namelen = struct.unpack("@iIII", buf[:fixed_size])
+            assert len(buf) >= fixed_size + namelen, "truncated rest of inotify message: expected %d bytes, got %d" % (fixed_size + namelen, len(buf))
+            pathname = buf[fixed_size : fixed_size + namelen].decode()
             if wd >= 0 :
                 watch = self._watches[wd]
             else :
