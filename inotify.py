@@ -334,10 +334,6 @@ class Context :
 
     def _callback(self) :
         # called by asyncio when there is a notification event to be read.
-        # seems I need to remove the watch and add it again to
-        # avoid an endless stream of notifications that cause
-        # excessive CPU usage -- asyncio bug?
-        self._add_remove_watch(False)
         fixed_size = ct.sizeof(inotify_event)
         buf = os.read(self._fd, fixed_size + NAME_MAX + 1)
         if len(buf) != 0 :
@@ -368,7 +364,6 @@ class Context :
                 self._awaiting[0].set_result(True)
             #end if
         #end if
-        self._add_remove_watch(True)
     #end _callback
 
     async def get(self, timeout = None) :
