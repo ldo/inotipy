@@ -34,6 +34,7 @@ class inotify_event(ct.Structure) :
 #end inotify_event
 
 class IN :
+    "definitions of flag bits that you will need."
 
     # from <bits/inotify.h>: flags for inotify_init1
     CLOEXEC = 0o2000000
@@ -153,6 +154,7 @@ libc.inotify_rm_watch.argtypes = (ct.c_int, ct.c_int)
 #-
 
 class Watch :
+    "represents a file path being watched. Do not create directly; get from Context.watch()."
 
     __slots__ = ("__weakref__", "_wd", "_parent", "pathname", "mask") # to forestall typos
 
@@ -177,6 +179,8 @@ class Watch :
     #end __del__
 
     def remove(self) :
+        "removes itself from being watched. Do not try to use this Watch" \
+        " object for anything else after making this call."
         if self._wd != None and self._parent != None :
             parent = self._parent()
             if parent != None :
@@ -188,6 +192,7 @@ class Watch :
     #end remove
 
     def replace_mask(self, mask) :
+        "lets you change the mask associated with this Watch."
         parent = self._parent()
         assert parent != None, "parent has gone away"
         wd = libc.inotify_add_watch(parent._fd, self.pathname.encode(), mask)
@@ -203,6 +208,7 @@ class Watch :
 #end Watch
 
 class Event :
+    "represents a watch event. Do not instantiate directly; get from Context.get()."
 
     __slots__ = ("watch", "mask", "cookie", "pathname") # to forestall typos
 
@@ -232,6 +238,8 @@ class Event :
 #end Event
 
 class Context :
+    "a context for watching one or more files or directories. Do not instantiate directly;" \
+    " use the create() method."
 
     __slots__ = \
         ( # to forestall typos
@@ -276,9 +284,9 @@ class Context :
 
     @classmethod
     def create(celf, flags = 0, loop = None) :
-        "creates a new Context for collecting filesystem notifications. Automatically" \
-        " installs a reader callback into the specified asyncio event loop, or the" \
-        " default loop if not specified."
+        "creates a new Context for collecting filesystem notifications. loop is the" \
+        " asyncio event loop into which to install reader callbacks; the default" \
+        " loop is used if this not specified."
         if loop == None :
             loop = asyncio.get_event_loop()
         #end if
@@ -316,6 +324,7 @@ class Context :
 
     @property
     def watches(self) :
+        "returns a list of currently-associated Watch objects."
         return \
             sorted(self._watches.values(), key = lambda w : w.pathname)
     #end watches
@@ -369,6 +378,10 @@ class Context :
     #end _callback
 
     async def get(self, timeout = None) :
+        "waits for and returns the next available Event. Waits forever if" \
+        " necessary if timeout is None; else it is the number of seconds" \
+        " (fractions allowed) to wait; if no event becomes available during" \
+        " that time, None is returned."
 
         awaiting = None
 
