@@ -161,12 +161,12 @@ class Watch :
     _instances = WeakValueDictionary()
 
     def __new__(celf, _wd, _parent) :
-        self = celf._instances.get(_wd)
+        self = celf._instances.get((_wd, _parent._fd))
         if self == None :
             self = super().__new__(celf)
             self._wd = _wd
             self._parent = weak_ref(_parent)
-            celf._instances[_wd] = self
+            celf._instances[(_wd, _parent._fd)] = self
         #end if
         # pathname, mask set by parent
         _parent._watches[_wd] = self
