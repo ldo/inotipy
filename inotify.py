@@ -390,6 +390,10 @@ class Context :
             awaiting = loop.create_future()
             timeout_task = None
             if timeout != None :
+                if timeout <= 0 :
+                    result = None
+                    break
+                #end if
                 timeout_task = loop.call_later(timeout, timedout)
             #end if
             self._awaiting.append(awaiting)
