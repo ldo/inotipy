@@ -345,7 +345,11 @@ class Context :
             wd, mask, cookie, namelen = struct.unpack("@iIII", buf[:fixed_size])
             assert len(buf) >= fixed_size + namelen, "truncated rest of inotify message: expected %d bytes, got %d" % (fixed_size + namelen, len(buf))
             pathname = buf[fixed_size : fixed_size + namelen]
-            pathname = pathname[:pathname.index(0)].decode()
+            end = pathname.find(0)
+            if end >= 0 :
+                pathname = pathname[:end]
+            #end if
+            pathname = pathname.decode()
             if wd >= 0 :
                 watch = self._watches[wd]
             else :
