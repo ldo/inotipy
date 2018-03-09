@@ -226,7 +226,7 @@ class Event :
             #end if
         #end for
         return \
-            "Event(%d, %s, %d, %s)" % (self.watch._wd, mask_bits, self.cookie, self.pathname)
+            "Event(%d, %s, %d, %s)" % (self.watch._wd, mask_bits, self.cookie, repr(self.pathname))
     #end __repr__
 
 #end Event
@@ -344,7 +344,8 @@ class Context :
             assert len(buf) >= fixed_size, "truncated inotify message: expected %d bytes, got %d" % (fixed_size, len(buf))
             wd, mask, cookie, namelen = struct.unpack("@iIII", buf[:fixed_size])
             assert len(buf) >= fixed_size + namelen, "truncated rest of inotify message: expected %d bytes, got %d" % (fixed_size + namelen, len(buf))
-            pathname = buf[fixed_size : fixed_size + namelen].decode()
+            pathname = buf[fixed_size : fixed_size + namelen]
+            pathname = pathname[:pathname.index(0)].decode()
             if wd >= 0 :
                 watch = self._watches[wd]
             else :
