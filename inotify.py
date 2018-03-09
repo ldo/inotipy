@@ -339,7 +339,7 @@ class Context :
         # excessive CPU usage -- asyncio bug?
         self._add_remove_watch(False)
         fixed_size = ct.sizeof(inotify_event)
-        buf = os.read(self._fd, fixed_size + NAME_MAX)
+        buf = os.read(self._fd, fixed_size + NAME_MAX + 1)
         if len(buf) != 0 :
             assert len(buf) >= fixed_size, "truncated inotify message: expected %d bytes, got %d" % (fixed_size, len(buf))
             wd, mask, cookie, namelen = struct.unpack("@iIII", buf[:fixed_size])
