@@ -239,6 +239,7 @@ class Context :
             "_fd",
             "_watches",
             "_loop",
+            "_reader_count",
             "_awaiting",
             "_notifs",
         )
@@ -252,6 +253,7 @@ class Context :
             self._fd = _fd
             self._loop = None # to begin with
             self._watches = {}
+            self._reader_count = 0
             self._awaiting = []
             self._notifs = []
             celf._instances[_fd] = self
@@ -288,7 +290,6 @@ class Context :
         result = celf(fd)
         if result._loop == None :
             result._loop = weak_ref(loop)
-            result._add_remove_watch(True)
         elif result._loop() != loop :
             raise RuntimeError("watcher was not created on current event loop")
         #end if
@@ -393,7 +394,15 @@ class Context :
                 timeout_task = loop.call_later(timeout, timedout)
             #end if
             self._awaiting.append(awaiting)
+            if self._reader_count == 0 :
+                self._add_remove_watch(True)
+            #end if
+            self._reader_count += 1
             got_one = await awaiting
+            self._reader_count -= 1
+            if self._reader_count == 0 :
+                self._add_remove_watch(False)
+            #end if
             if timeout_task != None :
                 timeout_task.cancel()
             #end if
