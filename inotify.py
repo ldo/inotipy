@@ -153,6 +153,22 @@ libc.inotify_rm_watch.argtypes = (ct.c_int, ct.c_int)
 # High-level stuff follows
 #-
 
+def decode_mask(mask) :
+    mask_bits = []
+    for i in range(32) :
+        if 1 << i & mask != 0 :
+            try :
+                name = EVENT_BIT(i)
+            except ValueError :
+                name = "?%d" % i
+            #end try
+            mask_bits.append(name)
+        #end if
+    #end for
+    return \
+        mask_bits
+#end decode_mask
+
 class Watch :
     "represents a file path being watched. Do not create directly; get from Context.watch()."
 
@@ -177,6 +193,14 @@ class Watch :
     def __del__(self) :
         self.remove()
     #end __del__
+
+    @property
+    def valid(self) :
+        "is this Watch object still valid. It can become invalid after a" \
+        " remove() call, or after inotify sends an IN.IGNORED event for it."
+        return \
+            self._parent != None and self._wd != None
+    #end valid
 
     def remove(self) :
         "removes itself from being watched. Do not try to use this Watch" \
@@ -205,6 +229,11 @@ class Watch :
         self.mask = mask
     #end replace_mask
 
+    def __repr__(self) :
+        return \
+            "%s(%s, %s, %d:%d)" % (type(self).__name__, repr(self.pathname), decode_mask(self.mask), self._parent()._fd, self._wd)
+    #end __repr__
+
 #end Watch
 
 class Event :
@@ -220,19 +249,8 @@ class Event :
     #end __init
 
     def __repr__(self) :
-        mask_bits = []
-        for i in range(32) :
-            if 1 << i & self.mask != 0 :
-                try :
-                    name = EVENT_BIT(i)
-                except ValueError :
-                    name = "?%d" % i
-                #end try
-                mask_bits.append(name)
-            #end if
-        #end for
         return \
-            "Event(%d, %s, %d, %s)" % (self.watch._wd, mask_bits, self.cookie, repr(self.pathname))
+            "%s(%d, %s, %d, %s)" % (type(self).__name__, self.watch._wd, decode_mask(self.mask), self.cookie, repr(self.pathname))
     #end __repr__
 
 #end Event
