@@ -390,7 +390,10 @@ class Watcher :
             self._notifs.append(Event(watch, mask, cookie, pathname))
             if wakeup and len(self._awaiting) != 0 :
                 # wake up task at head of queue
-                self._awaiting[0].set_result(True)
+                # also need to remove it from queue here, in case
+                # anybody else is also waiting behind it and I have
+                # additional incoming messages for them
+                self._awaiting.pop(0).set_result(True)
             #end if
         #end while
     #end _callback
@@ -437,7 +440,11 @@ class Watcher :
             if timeout_task != None :
                 timeout_task.cancel()
             #end if
-            self._awaiting.pop(self._awaiting.index(awaiting))
+            try :
+                self._awaiting.pop(self._awaiting.index(awaiting))
+            except ValueError :
+                pass
+            #end try
             if not got_one :
                 result = None
                 break
