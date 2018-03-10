@@ -170,7 +170,7 @@ def decode_mask(mask) :
 #end decode_mask
 
 class Watch :
-    "represents a file path being watched. Do not create directly; get from Context.watch()."
+    "represents a file path being watched. Do not create directly; get from Watcher.watch()."
 
     __slots__ = ("__weakref__", "_wd", "_parent", "pathname", "mask") # to forestall typos
 
@@ -237,7 +237,7 @@ class Watch :
 #end Watch
 
 class Event :
-    "represents a watch event. Do not instantiate directly; get from Context.get()."
+    "represents a watch event. Do not instantiate directly; get from Watcher.get()."
 
     __slots__ = ("watch", "mask", "cookie", "pathname") # to forestall typos
 
@@ -255,7 +255,7 @@ class Event :
 
 #end Event
 
-class Context :
+class Watcher :
     "a context for watching one or more files or directories. Do not instantiate directly;" \
     " use the create() method."
 
@@ -302,7 +302,7 @@ class Context :
 
     @classmethod
     def create(celf, flags = 0, loop = None) :
-        "creates a new Context for collecting filesystem notifications. loop is the" \
+        "creates a new Watcher for collecting filesystem notifications. loop is the" \
         " asyncio event loop into which to install reader callbacks; the default" \
         " loop is used if this not specified."
         if loop == None :
@@ -447,7 +447,7 @@ class Context :
             result
     #end get
 
-#end Context
+#end Watcher
 
 #+
 # Cleanup
@@ -455,7 +455,7 @@ class Context :
 
 def _atexit() :
     # disable all __del__ methods at process termination to avoid segfaults
-    for cls in Watch, Context :
+    for cls in Watch, Watcher :
         delattr(cls, "__del__")
     #end for
 #end _atexit
