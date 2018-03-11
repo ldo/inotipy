@@ -250,7 +250,7 @@ class Event :
 
     def __repr__(self) :
         return \
-            "%s(%d, %s, %d, %s)" % (type(self).__name__, self.watch._wd, decode_mask(self.mask), self.cookie, repr(self.pathname))
+            "%s(%s, %s, %d, %s)" % (type(self).__name__, (lambda : None, lambda : self.watch._wd)[self.watch != None](), decode_mask(self.mask), self.cookie, repr(self.pathname))
     #end __repr__
 
 #end Event
