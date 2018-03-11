@@ -62,9 +62,14 @@ this:
     Got event: Event(1, [<EVENT_BIT.DELETE_SELF: 10>], 0, '')
     Got event: Event(1, [<EVENT_BIT.IGNORED: 15>], 0, '')
 
-That should give you the basic flavour. There is more functionality
-available: see the `inotify(7)` man page for more details, and of course
-the documentation in `inotify.py` itself.
+That should give you the basic flavour. For more elaborate examples,
+see my `inotipy_examples` repo
+([GitLab](https://gitlab.com/ldo/inotipy_examples),
+[GitHub](https://github.com/ldo/inotipy_examples)).
+
+There is more functionality available: see the `inotify(7)` man page
+for more details, and of course the documentation in `inotify.py`
+itself.
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
 2018 March 11
