@@ -255,6 +255,17 @@ class Event :
 
 #end Event
 
+@enum.unique
+class STOP_ON(enum.Enum) :
+    "set of conditions on which to raise StopAsyncIteration:\n" \
+    "\n" \
+    "    TIMEOUT - timeout has elapsed\n" \
+    "\n" \
+    "Otherwise None will be returned on timeout."
+    TIMEOUT = 1
+    #CLOSED = 2 # can I implement this?
+#end STOP_ON
+
 class Watcher :
     "a context for watching one or more files or directories. Do not instantiate directly;" \
     " use the create() method."
@@ -454,7 +465,62 @@ class Watcher :
             result
     #end get
 
+    def iter_async(self, stop_on = None, timeout = None) :
+        "wrapper around get() to allow use with an async-for statement." \
+        " Lets you write\n" \
+        "\n" \
+        "    async for event in «watcher».iter_async(«timeout») :" \
+        "        «process event»\n" \
+        "    #end for\n" \
+        "\n" \
+        "to receive and process notifications in a loop. stop_on is an" \
+        " optional set of STOP_ON.xxx values indicating the conditions" \
+        " under which the iterator will raise StopAsyncIteration to" \
+        " terminate the loop."
+        if stop_on == None :
+            stop_on = frozenset()
+        elif (
+                not isinstance(stop_on, (set, frozenset))
+            or
+                not all(isinstance(elt, STOP_ON) for elt in stop_on)
+        ) :
+            raise TypeError("stop_on must be None or set of STOP_ON")
+        #end if
+        return \
+            _WatcherAiter(self, stop_on, timeout)
+    #end iter_async
+
 #end Watcher
+
+class _WatcherAiter :
+    # internal class for use by Watcher.iter_async (above).
+
+    def __init__(self, watcher, stop_on, timeout) :
+        self.watcher = watcher
+        self.stop_on = stop_on
+        self.timeout = timeout
+    #end __init__
+
+    def __aiter__(self) :
+        # I’m my own iterator.
+        return \
+            self
+    #end __aiter__
+
+    async def __anext__(self) :
+        stop_iter = False
+        result = await self.watcher.get(timeout = self.timeout)
+        if result == None and STOP_ON.TIMEOUT in self.stop_on :
+            stop_iter = True
+        #end if
+        if stop_iter :
+            raise StopAsyncIteration("Watcher.iter_async terminating")
+        #end if
+        return \
+            result
+    #end __anext__
+
+#end _WatcherAiter
 
 #+
 # Cleanup
