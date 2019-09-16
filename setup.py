@@ -1,5 +1,5 @@
 #+
-# Distutils script to install inopy. Invoke from the command line
+# Distutils script to install inotipy. Invoke from the command line
 # in this directory as follows:
 #
 #     python3 setup.py build
