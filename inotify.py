@@ -3,7 +3,7 @@ Pure-Python binding for the Linux inotify(7) API using ctypes and
 working with asyncio.
 """
 #+
-# Copyright 2018 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2018-2019 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under the GNU Lesser General Public License v2.1 or later.
 #-
 
@@ -417,8 +417,11 @@ class Watcher :
 
         awaiting = None
 
-        def timedout() :
-            awaiting.set_result(False)
+        def timedout(w_awaiting) :
+            awaiting = w_awaiting()
+            if awaiting != None and not awaiting.done() :
+                awaiting.set_result(False)
+            #end if
         #end timedout
 
     #begin get
@@ -436,7 +439,7 @@ class Watcher :
                     result = None
                     break
                 #end if
-                timeout_task = loop.call_later(timeout, timedout)
+                timeout_task = loop.call_later(timeout, timedout, weak_ref(awaiting))
             #end if
             self._awaiting.append(awaiting)
             if self._reader_count == 0 :
