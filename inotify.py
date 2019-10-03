@@ -511,12 +511,8 @@ class _WatcherAiter :
     #end __aiter__
 
     async def __anext__(self) :
-        stop_iter = False
         result = await self.watcher.get(timeout = self.timeout)
         if result == None and STOP_ON.TIMEOUT in self.stop_on :
-            stop_iter = True
-        #end if
-        if stop_iter :
             raise StopAsyncIteration("Watcher.iter_async terminating")
         #end if
         return \
