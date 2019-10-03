@@ -472,7 +472,7 @@ class Watcher :
         "wrapper around get() to allow use with an async-for statement." \
         " Lets you write\n" \
         "\n" \
-        "    async for event in «watcher».iter_async(«timeout») :" \
+        "    async for event in «watcher».iter_async(«stop_on», «timeout») :" \
         "        «process event»\n" \
         "    #end for\n" \
         "\n" \
