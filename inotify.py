@@ -232,14 +232,15 @@ class Watch :
     def __repr__(self) :
         return \
             (
-                "%s(%s, %s, %s:%d)"
+                "%s(%s, %#0.8x%s, %s:%d)"
             %
                 (
                     type(self).__name__,
                     repr(self.pathname),
+                    self.mask,
                     decode_mask(self.mask),
-                    (lambda : "<orphaned>", lambda : self._parent()._fd)[self._parent != None](),
-                    self._wd
+                    (lambda : "<orphaned>", lambda : self._parent().fd)[self._parent != None](),
+                    self.wd
                 )
             )
     #end __repr__
@@ -260,7 +261,18 @@ class Event :
 
     def __repr__(self) :
         return \
-            "%s(%s, %s, %d, %s)" % (type(self).__name__, (lambda : None, lambda : self.watch._wd)[self.watch != None](), decode_mask(self.mask), self.cookie, repr(self.pathname))
+            (
+                "%s(%s, %#0.8x%s, %d, %s)"
+            %
+                (
+                    type(self).__name__,
+                    (lambda : None, lambda : self.watch.wd)[self.watch != None](),
+                    self.mask,
+                    decode_mask(self.mask),
+                    self.cookie,
+                    repr(self.pathname)
+                )
+            )
     #end __repr__
 
 #end Event
