@@ -172,20 +172,20 @@ def decode_mask(mask) :
 class Watch :
     "represents a file path being watched. Do not create directly; get from Watcher.watch()."
 
-    __slots__ = ("__weakref__", "_wd", "_parent", "pathname", "mask") # to forestall typos
+    __slots__ = ("__weakref__", "_parent", "pathname", "mask", "wd") # to forestall typos
 
     _instances = WeakValueDictionary()
 
-    def __new__(celf, _wd, _parent) :
-        self = celf._instances.get((_wd, _parent._fd))
+    def __new__(celf, wd, _parent) :
+        self = celf._instances.get((wd, _parent.fd))
         if self == None :
             self = super().__new__(celf)
-            self._wd = _wd
+            self.wd = wd
             self._parent = weak_ref(_parent)
-            celf._instances[(_wd, _parent._fd)] = self
+            celf._instances[(wd, _parent.fd)] = self
         #end if
         # pathname, mask set by parent
-        _parent._watches[_wd] = self
+        _parent._watches[wd] = self
         return \
             self
     #end __new__
@@ -199,19 +199,19 @@ class Watch :
         "is this Watch object still valid. It can become invalid after a" \
         " remove() call, or after inotify sends an IN.IGNORED event for it."
         return \
-            self._parent != None and self._wd != None
+            self._parent != None and self.wd != None
     #end valid
 
     def remove(self) :
         "removes itself from being watched. Do not try to use this Watch" \
         " object for anything else after making this call."
-        if self._wd != None and self._parent != None :
+        if self.wd != None and self._parent != None :
             parent = self._parent()
             if parent != None :
-                libc.inotify_rm_watch(parent._fd, self._wd) # ignoring any error
-                parent._watches.pop(self._wd, None)
+                libc.inotify_rm_watch(parent.fd, self.wd) # ignoring any error
+                parent._watches.pop(self.wd, None)
             #end if
-            self._wd = None
+            self.wd = None
         #end if
     #end remove
 
@@ -219,11 +219,11 @@ class Watch :
         "lets you change the mask associated with this Watch."
         parent = self._parent()
         assert parent != None, "parent has gone away"
-        wd = libc.inotify_add_watch(parent._fd, self.pathname.encode(), mask)
+        wd = libc.inotify_add_watch(parent.fd, self.pathname.encode(), mask)
         if wd < 0 :
             errno = ct.get_errno()
             raise OSError(errno, os.strerror(errno))
-        elif wd != self._wd :
+        elif wd != self.wd :
             raise RuntimeError("inconsistency in watch descriptors")
         #end if
         self.mask = mask
@@ -295,7 +295,7 @@ class Watcher :
     __slots__ = \
         ( # to forestall typos
             "__weakref__",
-            "_fd",
+            "fd",
             "_watches",
             "_loop",
             "_reader_count",
@@ -305,17 +305,17 @@ class Watcher :
 
     _instances = WeakValueDictionary()
 
-    def __new__(celf, _fd) :
-        self = celf._instances.get(_fd)
+    def __new__(celf, fd) :
+        self = celf._instances.get(fd)
         if self == None :
             self = super().__new__(celf)
-            self._fd = _fd
+            self.fd = fd
             self._loop = None # to begin with
             self._watches = {}
             self._reader_count = 0
             self._awaiting = []
             self._notifs = []
-            celf._instances[_fd] = self
+            celf._instances[fd] = self
         #end if
         return \
             self
@@ -325,10 +325,10 @@ class Watcher :
         loop = self._loop()
         if add :
             assert loop != None, "loop has gone away"
-            loop.add_reader(self._fd, self._callback)
+            loop.add_reader(self.fd, self._callback)
         else :
             if loop != None :
-                loop.remove_reader(self._fd)
+                loop.remove_reader(self.fd)
             #end if
         #end if
     #end _add_remove_watch
@@ -361,7 +361,7 @@ class Watcher :
         " watch settings if there is already a watch on that path. Returns" \
         " the Watch object, either the same one as before or a new one for a" \
         " new path."
-        wd = libc.inotify_add_watch(self._fd, pathname.encode(), mask)
+        wd = libc.inotify_add_watch(self.fd, pathname.encode(), mask)
         if wd < 0 :
             errno = ct.get_errno()
             raise OSError(errno, os.strerror(errno))
@@ -381,22 +381,22 @@ class Watcher :
     #end watches
 
     def __del__(self) :
-        if self._fd != None :
+        if self.fd != None :
             self._add_remove_watch(False)
-            os.close(self._fd)
+            os.close(self.fd)
         #end if
-        self._fd = None
+        self.fd = None
     #end __del__
 
     def fileno(self) :
         return \
-            self._fd
+            self.fd
     #end fileno
 
     def _callback(self) :
         # called by asyncio when there is a notification event to be read.
         fixed_size = ct.sizeof(inotify_event)
-        buf = os.read(self._fd, fixed_size + NAME_MAX + 1)
+        buf = os.read(self.fd, fixed_size + NAME_MAX + 1)
         while len(buf) != 0 :
             assert len(buf) >= fixed_size, "truncated inotify message: expected %d bytes, got %d" % (fixed_size, len(buf))
             wd, mask, cookie, namelen = struct.unpack("@iIII", buf[:fixed_size])
