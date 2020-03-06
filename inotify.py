@@ -239,7 +239,8 @@ class Watch :
                     repr(self.pathname),
                     self.mask,
                     decode_mask(self.mask),
-                    (lambda : "<orphaned>", lambda : self._parent().fd)[self._parent != None](),
+                    (lambda : "<orphaned>", lambda : self._parent().fd)
+                        [self._parent != None and self._parent() != None](),
                     self.wd
                 )
             )
