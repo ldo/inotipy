@@ -36,7 +36,7 @@ class my_build(std_build) :
 distutils.core.setup \
   (
     name = "inotipy",
-    version = "1.1",
+    version = "1.2",
     description = "language bindings for inotify, for Python 3.5 or later",
     long_description = "language bindings for inotify, for Python 3.5 or later",
     author = "Lawrence D'Oliveiro",
