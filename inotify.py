@@ -3,7 +3,7 @@ Pure-Python binding for the Linux inotify(7) API using ctypes and
 working with asyncio.
 """
 #+
-# Copyright 2018-2019 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2018-2020 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under the GNU Lesser General Public License v2.1 or later.
 #-
 
