@@ -231,7 +231,17 @@ class Watch :
 
     def __repr__(self) :
         return \
-            "%s(%s, %s, %d:%d)" % (type(self).__name__, repr(self.pathname), decode_mask(self.mask), self._parent()._fd, self._wd)
+            (
+                "%s(%s, %s, %s:%d)"
+            %
+                (
+                    type(self).__name__,
+                    repr(self.pathname),
+                    decode_mask(self.mask),
+                    (lambda : "<orphaned>", lambda : self._parent()._fd)[self._parent != None](),
+                    self._wd
+                )
+            )
     #end __repr__
 
 #end Watch
