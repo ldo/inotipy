@@ -3,7 +3,7 @@ Pure-Python binding for the Linux inotify(7) API using ctypes and
 working with asyncio.
 """
 #+
-# Copyright 2018-2020 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2018-2022 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under the GNU Lesser General Public License v2.1 or later.
 #-
 
@@ -16,6 +16,23 @@ from weakref import \
     WeakValueDictionary
 import asyncio
 import atexit
+
+#+
+# Useful stuff
+#-
+
+def get_event_loop() :
+    "Python docs indicate that asyncio.get_event_loop() is going away" \
+    " in its current form. But I still need to be able to attach objects" \
+    " to the default event loop from a non-coroutine context. So I" \
+    " reimplement its original semantics here."
+    return \
+        asyncio.get_event_loop_policy().get_event_loop()
+#end get_event_loop
+
+#+
+# Low-level interface
+#-
 
 libc = ct.CDLL("libc.so.6", use_errno = True)
 
@@ -340,7 +357,7 @@ class Watcher :
         " asyncio event loop into which to install reader callbacks; the default" \
         " loop is used if this not specified."
         if loop == None :
-            loop = asyncio.get_event_loop()
+            loop = get_event_loop()
         #end if
         fd = libc.inotify_init1(flags)
         if fd < 0 :
